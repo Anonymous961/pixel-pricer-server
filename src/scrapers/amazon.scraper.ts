@@ -1,4 +1,4 @@
-import { chromium, type Page } from 'playwright';
+import { BaseScraper } from './base.scraper';
 
 interface AmazonProduct {
     title: string;
@@ -7,39 +7,35 @@ interface AmazonProduct {
     timestamp: string;
 }
 
-export class AmazonScrapper {
-    private page: Page | null = null;
-    async scrapeProduct(url: string): Promise<AmazonProduct> {
-        const browser = await chromium.launch({ headless: true });
-        try {
-            this.page = await browser.newPage();
-            console.log(`Navigating to ${url}`);
-            await this.page.goto(url, { waitUntil: "domcontentloaded" });
-            console.log(`Page title: ${await this.page.title()}`);
-
-            const product = {
-                title: await this.getTextContent('span#productTitle'),
-                price: await this.getTextContent('.a-price-whole >> nth=0'),
-                availability: await this.getTextContent('#availability span'),
-                timestamp: JSON.stringify(new Date())
-            };
-
-            console.log(product);
-            return product
-        } catch (error) {
-            console.error("Error launching browser:", error);
-            throw error;
-        } finally {
-            await browser.close();
-        }
+export class AmazonScrapper extends BaseScraper {
+    getProductSelectors() {
+        return {
+            title: 'span#productTitle',
+            price: '.a-price-whole >> nth=0',
+            availability: '#availability span',
+            image: '#imgTagWrapperId img'
+        };
     }
 
-    private async getTextContent(selector: string): Promise<string> {
-        if (!this.page) {
-            throw new Error("Page is not initialized");
+    async scrapeProduct(url: string): Promise<AmazonProduct> {
+        try {
+            await this.init();
+            console.log(`Navigating to ${url}`);
+            await this.page?.goto(url, { waitUntil: 'domcontentloaded' });
+
+            const selectors = this.getProductSelectors();
+            const product = {
+                title: await this.getTextContent(selectors.title),
+                price: await this.getTextContent(selectors.price),
+                availability: await this.getTextContent(selectors.availability),
+                image: await this.getAttribute(selectors.image, 'src'),
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('Scraped product:', product);
+            return product;
+        } finally {
+            await this.close();
         }
-        await this.page.waitForSelector(selector, { state: 'attached' });
-        const element = this.page.locator(selector).first();
-        return (await element.innerText()).trim();
     }
 }
