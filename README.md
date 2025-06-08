@@ -1,196 +1,202 @@
-# Node.js TypeScript Server Template
+Here's a comprehensive `README.md` file for your Pixel Pricer project:
 
-A robust and scalable Node.js server template built with TypeScript, Express, and modern development tools. This template is designed to help you quickly set up a production-ready Node.js server with TypeScript.
+````markdown
+# Pixel Pricer - E-commerce Price Tracker
 
----
+![Project Logo](https://via.placeholder.com/150) _(Consider adding a logo here)_
+
+A web scraping service that tracks product prices across multiple e-commerce platforms and notifies users of price drops.
 
 ## Features
 
-- **TypeScript**: Strongly-typed JavaScript for better development experience.
-- **Express**: Fast and minimalist web framework for Node.js.
-- **Morgan**: HTTP request logging for monitoring incoming requests.
-- **Dotenv**: Environment variable management.
-- **Nodemon**: Automatic server restart during development.
-- **Modular Structure**: Organized folder structure for scalability.
-- **Environment Template**: Includes a `.env.example` file for easy setup.
+- 🛍️ Multi-platform price tracking (Amazon, Flipkart, etc.)
+- 📉 Price drop alerts via email/SMS
+- 📊 Price history analytics
+- 🔔 Customizable notification thresholds
+- 🚀 Scalable architecture for adding new stores
 
----
+## Tech Stack
 
-## Prerequisites
+### Backend
 
-Before you begin, ensure you have the following installed:
+- **Node.js** with **TypeScript**
+- **Playwright** for browser automation
+- **Express.js** for API routes
+- **Bull** for job queues
+- **PostgreSQL** with **Prisma** ORM
 
-- [Node.js](https://nodejs.org/) (v16 or higher recommended)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+### Frontend
 
----
+- **Next.js** (React) for dashboard
+- **Tailwind CSS** for styling
+- **Chart.js** for price history visualization
 
-## Getting Started
+## Installation
 
-### 1. Clone the Repository
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/pixel-pricer.git
+   cd pixel-pricer
+   ```
+````
 
-Clone this repository to your local machine:
+2. Install dependencies:
 
-```bash
-git clone https://github.com/your-username/nodejs-ts-server.git
-cd nodejs-ts-server
-```
+   ```bash
+   npm install
+   ```
 
-### 2. Install Dependencies
+3. Set up environment variables (create `.env` file):
 
-Install the required dependencies:
+   ```env
+   DATABASE_URL="postgresql://user:password@localhost:5432/pixel-pricer"
+   SMTP_HOST=your-smtp-host
+   SMTP_PORT=587
+   SMTP_USER=your-email
+   SMTP_PASS=your-password
+   ```
 
-```bash
-npm install
-```
+4. Run database migrations:
+   ```bash
+   npx prisma migrate dev
+   ```
 
-### 3. Set Up Environment Variables
+## Running the Project
 
-Run the setup script to create a `.env` file from the provided `.env.example`:
-
-```bash
-npm run setup
-```
-
-Open the `.env` file and replace the placeholders with your actual values:
-
-```env
-PORT=3000
-NODE_ENV=development
-```
-
-### 4. Run the Server
-
-Start the server in development mode:
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-The server will start at `http://localhost:3000`.
+### Production Build
 
----
-
-## Project Structure
-
-```
-nodejs-ts-server/
-├── src/
-│   ├── controllers/       # Route controllers
-│   ├── routes/            # Route definitions
-│   ├── services/          # Business logic
-│   ├── utils/             # Utility functions
-│   ├── app.ts             # Express app setup
-│   └── server.ts          # Server entry point
-├── .env.example           # Environment variables template
-├── .env                   # Environment variables (ignored by Git)
-├── .gitignore             # Files to ignore in Git
-├── package.json           # Project dependencies and scripts
-├── tsconfig.json          # TypeScript configuration
-├── nodemon.json           # Nodemon configuration
-└── README.md              # Project documentation
+```bash
+npm run build
+npm start
 ```
 
----
+## Scraper Architecture
 
-## Available Scripts
+```mermaid
+graph TD
+    A[Frontend] --> B[API Server]
+    B --> C[Scraper Queue]
+    C --> D[Amazon Scraper]
+    C --> E[Flipkart Scraper]
+    D --> F[(Database)]
+    E --> F
+    F --> G[Notification Service]
+```
 
-- **`npm run dev`**: Start the server in development mode using `nodemon` and `ts-node`.
-- **`npm run build`**: Compile TypeScript files to JavaScript in the `dist` folder.
-- **`npm start`**: Start the server in production mode using the compiled JavaScript files.
-- **`npm run setup`**: Create a `.env` file from `.env.example`.
+## Configuration
 
----
+Edit `config/scrapers/*.config.ts` files to update:
 
-## Adding Routes
+- Product selectors
+- Scraping intervals
+- Platform-specific settings
 
-To add a new route, follow these steps:
+Example Amazon config:
 
-1. Create a new controller in the `src/controllers/` folder.
+```typescript
+export const AmazonConfig = {
+  selectors: {
+    productTitle: "span#productTitle",
+    price: ".a-price-whole",
+    availability: "#availability span",
+  },
+  scrapingInterval: "6 hours",
+};
+```
 
-   ```typescript
-   // src/controllers/exampleController.ts
-   import { Request, Response } from "express";
+## Adding New Stores
 
-   export const getExample = (req: Request, res: Response) => {
-     res.json({ message: "This is an example route" });
-   };
-   ```
-
-2. Define the route in the `src/routes/` folder.
-
-   ```typescript
-   // src/routes/exampleRoutes.ts
-   import express from "express";
-   import { getExample } from "../controllers/exampleController";
-
-   const router = express.Router();
-
-   router.get("/example", getExample);
-
-   export default router;
-   ```
-
-3. Register the route in `src/app.ts`.
+1. Create a new scraper class extending `BaseScraper`:
 
    ```typescript
-   import exampleRoutes from "./routes/exampleRoutes";
+   export class NewStoreScraper extends BaseScraper {
+     getProductSelectors() {
+       return {
+         name: "product-title-selector",
+         price: "price-selector",
+       };
+     }
 
-   // Add this line after other middleware
-   app.use("/api", exampleRoutes);
+     async scrapeProduct(url: string) {
+       // Implementation
+     }
+   }
    ```
 
-Now, the new route will be available at `http://localhost:3000/api/example`.
-
----
-
-## Environment Variables
-
-The project uses environment variables for configuration. To set up your environment:
-
-1. Rename the `.env.example` file to `.env`:
-
-   ```bash
-   cp .env.example .env
+2. Register the scraper in the queue system:
+   ```typescript
+   scraperQueue.process("new-store", async (job) => {
+     const scraper = new NewStoreScraper();
+     return await scraper.scrapeProduct(job.data.url);
+   });
    ```
 
-2. Open the `.env` file and replace the placeholders with your actual values:
-   ```env
-   PORT=3000
-   NODE_ENV=development
-   ```
+## API Endpoints
 
-The following environment variables are used in this project:
+| Endpoint               | Method | Description             |
+| ---------------------- | ------ | ----------------------- |
+| `/api/products`        | GET    | List tracked products   |
+| `/api/scrape/amazon`   | POST   | Scrape Amazon product   |
+| `/api/scrape/flipkart` | POST   | Scrape Flipkart product |
+| `/api/alerts`          | GET    | List price drop alerts  |
 
-- **`PORT`**: The port on which the server will run (default: `3000`).
-- **`NODE_ENV`**: The environment mode (`development` or `production`).
+## Deployment
 
----
+### Docker Setup
 
-## Logging
+```bash
+docker-compose up -d
+```
 
-HTTP request logging is handled by `morgan`. In development mode, logs are printed to the console in the `dev` format. You can customize the logging format or output as needed.
+### Environment Variables
 
----
+| Variable       | Required | Description                  |
+| -------------- | -------- | ---------------------------- |
+| `DATABASE_URL` | Yes      | PostgreSQL connection string |
+| `SMTP_*`       | No       | Email notification settings  |
+| `REDIS_URL`    | No       | Redis connection for queues  |
 
 ## Contributing
 
-Contributions are welcome! If you find a bug or want to add a feature, please open an issue or submit a pull request.
-
----
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Distributed under the MIT License. See `LICENSE` for more information.
 
----
+## Contact
 
-## Acknowledgments
+Your Name - [@yourtwitter](https://twitter.com/yourtwitter) - your.email@example.com
 
-- [Express](https://expressjs.com/) for the web framework.
-- [TypeScript](https://www.typescriptlang.org/) for adding type safety.
-- [Morgan](https://github.com/expressjs/morgan) for HTTP request logging.
+Project Link: [https://github.com/yourusername/pixel-pricer](https://github.com/yourusername/pixel-pricer)
 
----
+```
 
-Enjoy building your Node.js server with TypeScript! 🚀
+## Key Sections Included:
+
+1. **Project Overview**: Brief description and features
+2. **Tech Stack**: Backend and frontend technologies
+3. **Installation**: Setup instructions
+4. **Configuration**: How to customize scrapers
+5. **Architecture**: Visual representation of the system
+6. **API Documentation**: Available endpoints
+7. **Deployment**: Docker and environment setup
+8. **Contributing**: Guidelines for contributors
+
+You can customize this further by:
+- Adding screenshots of your application
+- Including more detailed API documentation
+- Adding a roadmap or future features section
+- Including troubleshooting tips for common issues
+- Adding a section about rate limiting and ethical scraping practices
+```
